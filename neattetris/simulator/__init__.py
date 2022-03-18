@@ -1,1 +1,1 @@
-from neattetris.simulator.simulator import *
+from .simulator import Simulator
