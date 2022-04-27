@@ -33,8 +33,8 @@ class HumanActivation:
 def eval_genomes(genomes, config):
     for genome_id, genome in genomes:
         net = neat.nn.FeedForwardNetwork.create(genome, config)
-        state = neattetris.gamestates.GameStateTetris(WIDTH, HEIGHT)
-        sim = neattetris.simulator.CoordSimulator()
+        state = neattetris.gamestates.GameStateRubik()
+        sim = neattetris.simulator.RubikSimulator()
         genome.fitness = sim.simulation(net, state)
 
 
@@ -68,8 +68,8 @@ def main_nn():
     # Simulation for best genome
     while input('TRAINING FINISHED, SIMULATE WINNER') == '':
         net = neat.nn.FeedForwardNetwork.create(winner, config)
-        state = neattetris.gamestates.GameStateTetris(WIDTH, HEIGHT)
-        sim = neattetris.simulator.CoordSimulator()
+        state = neattetris.gamestates.GameStateRubik()
+        sim = neattetris.simulator.RubikSimulator()
         _ = sim.simulation(net, state, visual=True)
 
 

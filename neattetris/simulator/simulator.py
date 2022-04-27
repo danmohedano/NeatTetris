@@ -39,7 +39,6 @@ class Simulator:
             self.game_state.visual()
 
         while self.simulation_step(net):
-            self.fitness += 1
             if visual:
                 self.game_state.visual()
                 time.sleep(0.5)
@@ -114,3 +113,45 @@ class CoordSimulator(Simulator):
         self.fitness += fitness_delta
 
         return end_flag
+
+
+class RubikSimulator(Simulator):
+    def simulation(
+            self,
+            net: FeedForwardNetwork,
+            game_state: GameState,
+            visual: bool = False
+    ) -> float:
+        """Simulation of a given neural network.
+
+        Simulates the game logic with a given neural network agent. For each
+        frame, the simulator calculates the agent's response to the game state
+        and executes the action.
+
+        Args:
+            net (FeedForwardNetwork): Neural network agent to decide the
+                actions taken through the simulation.
+            game_state (GameState): Initialized GameState to simulate.
+            visual (bool): If the execution should be shown or not.
+
+        Returns:
+            float: Fitness of the given neural network provided.
+        """
+        # 1. Initialize game state and needed simulation variables
+        self.game_state = game_state
+        self.fitness = 0.0
+
+        # 2. While the game is not over, execute simulation steps
+        if visual:
+            self.game_state.visual()
+
+        for _ in range(500):
+            flag = self.simulation_step(net)
+            if visual:
+                self.game_state.visual()
+                time.sleep(0.5)
+
+            if not flag:
+                break
+
+        return self.fitness
