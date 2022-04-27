@@ -39,6 +39,7 @@ class Simulator:
             self.game_state.visual()
 
         while self.simulation_step(net):
+            self.fitness += 1.0
             if visual:
                 self.game_state.visual()
                 time.sleep(0.5)

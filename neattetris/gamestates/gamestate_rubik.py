@@ -310,7 +310,7 @@ class GameStateRubik(GameState):
         faces = [self.down[:, :], self.front[:, :], self.right[:, :], self.back[:, :], self.left[:, :], self.up[:, :]]
         for i in range(6):
             if len(np.unique(faces[i])) > 1:
-                return True, 1.0
+                return True, -1.0
 
         return False, 0.0
 
