@@ -1,6 +1,7 @@
 from neattetris.gamestates.gamestate import GameState
 from neat.nn import FeedForwardNetwork
 import numpy as np
+import time
 
 
 class Simulator:
@@ -38,8 +39,10 @@ class Simulator:
             self.game_state.visual()
 
         while self.simulation_step(net):
+            self.fitness += 1
             if visual:
                 self.game_state.visual()
+                time.sleep(0.5)
 
         return self.fitness
 
@@ -72,6 +75,42 @@ class Simulator:
 
         # 3. Post-decision checks and updates
         end_flag, fitness_delta = self.game_state.post_checks()
+        self.fitness += fitness_delta
+
+        return end_flag
+
+
+class CoordSimulator(Simulator):
+    def simulation_step(
+            self,
+            net: FeedForwardNetwork
+    ) -> bool:
+        """Simulation step for a given neural network.
+
+        Executes a simulation step for a given neural network agent. The step
+        consists in the evalutation of the game state by the network and the
+        corresponding execution of the action chosen by the agent.
+
+        Args:
+            net: Neural network agent to decide the action.
+
+        Returns:
+            bool: True if the game state can continue, false otherwise.
+        """
+        # 0. Pre-decision checks and updates
+        if not self.game_state.pre_checks():
+            return False
+
+        # 1. Evaluation of game state by the agent and selection of action
+        output = net.activate(self.game_state.hand_picked_data)
+        x_coord = np.argmax(output[:-4])
+        rotation = np.argmax(output[-4:])
+
+        # 2. Performing of selected action (if possible)
+        self.game_state.perform_action_coords(x_coord, rotation)
+
+        # 3. Post-decision checks and updates
+        end_flag, fitness_delta = self.game_state.post_checks(no_gravity=True)
         self.fitness += fitness_delta
 
         return end_flag

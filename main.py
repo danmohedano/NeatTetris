@@ -1,15 +1,16 @@
 import neat
 
 import neattetris.gamestates
-from neattetris import *
-from neat.nn import FeedForwardNetwork
 import numpy as np
 import sys
 import select
 import os
 
+WIDTH = 15
+HEIGHT = 20
 
-class HumanActivation():
+
+class HumanActivation:
     decision_dict = {
         'a': 0,
         'd': 1,
@@ -32,8 +33,8 @@ class HumanActivation():
 def eval_genomes(genomes, config):
     for genome_id, genome in genomes:
         net = neat.nn.FeedForwardNetwork.create(genome, config)
-        state = neattetris.gamestates.GameStateTetris(8, 10)
-        sim = neattetris.simulator.Simulator()
+        state = neattetris.gamestates.GameStateTetris(WIDTH, HEIGHT)
+        sim = neattetris.simulator.CoordSimulator()
         genome.fitness = sim.simulation(net, state)
 
 
@@ -60,7 +61,16 @@ def main_nn():
     p.add_reporter(stats)
 
     # Run 2000 generations
-    winner = p.run(eval_genomes, 2000)
+    winner = p.run(eval_genomes, 200)
+    #with open('winner', 'w') as f:
+    #    winner.write_config(f, config)
+
+    # Simulation for best genome
+    while input('TRAINING FINISHED, SIMULATE WINNER') == '':
+        net = neat.nn.FeedForwardNetwork.create(winner, config)
+        state = neattetris.gamestates.GameStateTetris(WIDTH, HEIGHT)
+        sim = neattetris.simulator.CoordSimulator()
+        _ = sim.simulation(net, state, visual=True)
 
 
 if __name__ == '__main__':

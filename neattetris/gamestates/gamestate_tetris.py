@@ -14,7 +14,8 @@ _PIECES = [
     np.array([[0, 0, 1], [0, 1, 1], [0, 1, 0]]),
 ]
 _N_PIECES = len(_PIECES)
-_GRAVITY = [10, 10, 9, 9, 8, 8, 7, 7, 6, 6, 5, 5, 5, 4, 4, 4, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1]
+# _GRAVITY = [10, 10, 9, 9, 8, 8, 7, 7, 6, 6, 5, 5, 5, 4, 4, 4, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1]
+_GRAVITY = [1] * 10
 _SCORE_MULTIPLIER = [0, 40, 100, 300, 1200]
 
 
@@ -22,6 +23,7 @@ class GameStateTetris(GameState):
     def __init__(self,
                  grid_width: int = 16,
                  grid_height: int = 26):
+        random.seed(0)
         self.grid = np.zeros((grid_width, grid_height))
         self.active_piece = None
         self.active_piece_position = (0, 0)
@@ -183,12 +185,12 @@ class GameStateTetris(GameState):
     def pre_checks(self) -> bool:
         """Checks before decision execution.
 
-        Not necessary for Tetris game logic.
+        Checks if current piece overlaps with the grid, causing end game.
 
         Returns:
             bool: True if the game state can continue, false otherwise.
         """
-        return True
+        return self._check_action(self.active_piece_position, self.active_piece)
 
     def perform_action(self, decision: int):
         """Execution of action by game logic.
@@ -212,12 +214,39 @@ class GameStateTetris(GameState):
         else:
             return
 
-    def post_checks(self) -> Tuple[bool, float]:
+    def perform_action_coords(self, x_pos: int, rotation: int):
+        """Instead of doing individual moves, the agent just chooses a
+        horizontal coordinate and rotation for the piece and drops it.
+
+        Args:
+            x_pos (int): Horizontal position of the piece.
+            rotation (int): Amount of rotations of the piece.
+        """
+        real_x_pos = x_pos - 2  # Possible x values go from -2 to width + 2
+        delta_x = real_x_pos - self.active_piece_position[0]
+
+        # Rotation
+        for i in range(rotation):
+            self._rotate(1)
+
+        # Horizontal movement
+        for i in range(abs(delta_x)):
+            self._move(np.sign(delta_x))
+
+        # Drop until collision
+        while self._move_down():
+            continue
+
+    def post_checks(self, no_gravity: bool = False) -> Tuple[bool, float]:
         """Post decision checks.
 
         Checks for gravity activation. If gravity is activated, the piece is
         dropped one row. If this move is not possible, the piece is fused into
         the grid and a new active piece appears, as well as checking for lines.
+
+        Args:
+            no_gravity (bool): To indicate if gravity should be used or not
+                (not used when using coordinates moves).
 
         Returns:
             bool: True if the game state can continue, false otherwise.
@@ -226,7 +255,7 @@ class GameStateTetris(GameState):
         # Check gravity
         self.t = (self.t + 1) % _GRAVITY[self.level]
 
-        if not self.t:
+        if (not self.t) or no_gravity:
             drop_flag = self._move_down()
 
             if not drop_flag:
@@ -260,9 +289,42 @@ class GameStateTetris(GameState):
         Returns:
             np.ndarray: Game state data.
         """
+        """piece = np.zeros([4, 4])
+        piece[:self.active_piece.shape[0], :self.active_piece.shape[1]] = self.active_piece"""
+        state = np.copy(self.grid)
+        # Place the active piece into the grid
+        for i in range(self.active_piece.shape[0]):
+            for j in range(self.active_piece.shape[1]):
+                current_x, current_y = self.active_piece_position
+                try:
+                    state[i + current_x, j + current_y] = self.active_piece[i, j]
+                except:
+                    continue
+        # return np.concatenate([piece.flatten(), self.active_piece_position, self.grid.flatten()])
+        return state.flatten()
+
+    @property
+    def hand_picked_data(self) -> np.ndarray:
+        """
+
+        Returns:
+
+        """
+        state = np.copy(self.grid)
+        heights = np.zeros(state.shape[0])
+
+        for i in range(state.shape[0]):
+            for j in range(state.shape[1] - 1, -1):
+                if state[i, j] == 1.0:
+                    heights[i] = state.shape[1] - j
+                    break
+
+        heights /= state.shape[0]
+
         piece = np.zeros([4, 4])
         piece[:self.active_piece.shape[0], :self.active_piece.shape[1]] = self.active_piece
-        return np.concatenate([piece.flatten(), self.active_piece_position, self.grid.flatten()])
+
+        return np.concatenate([heights, piece.flatten()])
 
     def visual(self):
         """Visual representation of the game state information.
